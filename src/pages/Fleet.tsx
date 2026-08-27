@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { api, isStale, shortCommit, timeAgo, type Device } from '../api'
+import { api, isStale, shortCommit, timeAgo, useSource, type Device } from '../api'
 import { DeviceStatus, deviceStatus } from '../components/Status'
 
 type Filter = 'all' | 'stale' | 'unhealthy' | 'pinned' | 'updating'
 
 export default function Fleet() {
+  // The source is part of every query key: flipping mock/live must refetch,
+  // never show the other backend's cached rows.
+  const { source } = useSource()
   const { data, isLoading, error } = useQuery({
-    queryKey: ['fleet'], queryFn: () => api.fleet(),
+    queryKey: ['fleet', source], queryFn: () => api.fleet(),
   })
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')

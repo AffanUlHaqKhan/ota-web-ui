@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { api, shortCommit, timeAgo } from '../api'
+import { api, shortCommit, timeAgo, useSource } from '../api'
 import { DeviceStatus, RolloutStateChip } from '../components/Status'
 import { RolloutProgress } from '../components/RolloutProgress'
 
 export default function RolloutDetail() {
   const { id = '' } = useParams()
   const qc = useQueryClient()
-  const { data: r, error } = useQuery({ queryKey: ['rollout', id], queryFn: () => api.rollout(id) })
+  const { source } = useSource()
+  const { data: r, error } = useQuery({ queryKey: ['rollout', id, source], queryFn: () => api.rollout(id) })
   const { data: devices } = useQuery({
-    queryKey: ['rollout-devices', id], queryFn: () => api.rolloutDevices(id),
+    queryKey: ['rollout-devices', id, source], queryFn: () => api.rolloutDevices(id),
   })
   const pause = useMutation({
     mutationFn: () => api.pauseRollout(id),

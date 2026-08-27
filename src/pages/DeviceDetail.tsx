@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { api, isStale, shortCommit, timeAgo } from '../api'
+import { api, isStale, shortCommit, timeAgo, useSource } from '../api'
 import { DeviceStatus, StatusChip } from '../components/Status'
 
 export default function DeviceDetail() {
   const { id = '' } = useParams()
   const qc = useQueryClient()
-  const { data: d, error } = useQuery({ queryKey: ['device', id], queryFn: () => api.device(id) })
+  const { source } = useSource()
+  const { data: d, error } = useQuery({ queryKey: ['device', id, source], queryFn: () => api.device(id) })
   const { data: events } = useQuery({
-    queryKey: ['device-events', id], queryFn: () => api.deviceEvents(id),
+    queryKey: ['device-events', id, source], queryFn: () => api.deviceEvents(id),
   })
   const pin = useMutation({
     mutationFn: (pinned: boolean) => api.setPinned(id, pinned),

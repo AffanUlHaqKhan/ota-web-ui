@@ -1,5 +1,5 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { USING_MOCK } from './api'
+import { SourceSwitch } from './components/SourceSwitch'
 import Fleet from './pages/Fleet'
 import DeviceDetail from './pages/DeviceDetail'
 import Targets from './pages/Targets'
@@ -25,16 +25,7 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
-        {USING_MOCK && (
-          <div style={{
-            margin: '16px', padding: '8px 10px', fontSize: 12,
-            border: '1px solid var(--warning)', borderRadius: 6,
-            color: 'var(--ink-secondary)',
-          }}>
-            <strong>▲ Mock data.</strong> Simulated fleet, no server.
-            Set <code>VITE_USE_MOCK=0</code> for the real API.
-          </div>
-        )}
+        <SourceSwitch />
       </aside>
       <main className="main">
         <Routes>

@@ -87,8 +87,18 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-**It runs with no backend and no hardware.** `.env.development` sets
-`VITE_USE_MOCK=1`, which serves the app from an in-memory fake fleet
+**Switch between mock and live data in the UI** — top of the sidebar. The choice
+persists in `localStorage`, so it survives reloads; `VITE_USE_MOCK` only decides
+what a fresh browser opens on. Switching clears the query cache, because the two
+sources are different worlds and one's rows must never linger while the other
+loads.
+
+In **Live** mode the sidebar also reports whether `ota-server` is actually
+reachable. That matters more than it sounds: an empty fleet table and a dead
+server look identical, and only one of them is your problem.
+
+**It runs with no backend and no hardware.** In **Mock** mode the app serves
+itself from an in-memory fake fleet
 ([src/api/mock.ts](src/api/mock.ts)): 420 devices, a rollout that advances on a
 timer, ~8% of devices failing their healthcheck and rolling back, and the
 auto-halt threshold firing for real when the failure rate is exceeded.

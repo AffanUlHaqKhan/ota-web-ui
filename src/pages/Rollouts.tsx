@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { api, timeAgo, type Rollout } from '../api'
+import { api, timeAgo, useSource, type Rollout } from '../api'
 import { RolloutStateChip } from '../components/Status'
 import { RolloutProgress } from '../components/RolloutProgress'
 
 export default function Rollouts() {
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery({ queryKey: ['rollouts'], queryFn: () => api.rollouts() })
+  const { source } = useSource()
+  const { data, isLoading } = useQuery({ queryKey: ['rollouts', source], queryFn: () => api.rollouts() })
   const pause = useMutation({
     mutationFn: (id: string) => api.pauseRollout(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['rollouts'] }),

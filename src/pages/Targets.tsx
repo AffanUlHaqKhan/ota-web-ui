@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { api, formatBytes, shortCommit, timeAgo } from '../api'
+import { api, formatBytes, shortCommit, timeAgo, useSource } from '../api'
 
 export default function Targets() {
-  const { data, isLoading } = useQuery({ queryKey: ['targets'], queryFn: () => api.targets() })
+  const { source } = useSource()
+  const { data, isLoading } = useQuery({ queryKey: ['targets', source], queryFn: () => api.targets() })
 
   return (
     <>
