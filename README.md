@@ -80,14 +80,69 @@ Groups, channels, maintenance windows, API tokens, operators and roles.
 
 ---
 
-## Stack
-
-Scaffold fresh so dependencies are current:
+## Running it
 
 ```bash
-npm create vite@latest . -- --template react-ts
-npm i @tanstack/react-query react-router-dom
+npm install
+npm run dev          # http://localhost:5173
 ```
+
+**It runs with no backend and no hardware.** `.env.development` sets
+`VITE_USE_MOCK=1`, which serves the app from an in-memory fake fleet
+([src/api/mock.ts](src/api/mock.ts)): 420 devices, a rollout that advances on a
+timer, ~8% of devices failing their healthcheck and rolling back, and the
+auto-halt threshold firing for real when the failure rate is exceeded.
+
+That is deliberate. The fake exists so the UI is built against a realistic device
+count from day one — a fleet view designed against three rows is unusable at
+three thousand — and so pause/resume and auto-halt are exercised rather than
+mocked as static screenshots.
+
+To share the mock UI as static files (no Node, no backend):
+
+```bash
+npm run build:demo && npm run preview
+```
+
+Plain `npm run build` produces a **real-API** bundle — Vite only reads
+`.env.development` in dev mode, so a normal production build has
+`VITE_USE_MOCK` undefined and talks to `/api/v1`.
+
+Point it at a real server with `VITE_USE_MOCK=0`; `vite.config.ts` proxies
+`/api` to `http://localhost:8000`. The two implementations sit behind one
+`Api` interface in [src/api/types.ts](src/api/types.ts), so nothing else changes.
+
+## Stack
+
+| Concern | Choice | Why |
+|---|---|---|
+| Build | Vite 5 + React 18 + TS | Vite 7 needs Node 20+; this repo targets the Node 18 currently installed |
+| Data fetching | `@tanstack/react-query` | caching, retries, background refetch for a dashboard that is mostly reads |
+| Live updates | polling every 2s, **placeholder** | `WS /api/v1/events` does not exist server-side yet; polling a fleet endpoint does not scale past a few hundred devices |
+| Types | hand-written in `src/api/types.ts` | generate from `/openapi.json` once the server is real — hand-written types drift |
+| Auth | not implemented | needs the IdP decision, `DECISIONS.md` D11 |
+
+## Layout
+
+```
+src/
+  api/        types.ts (contract) · client.ts (real) · mock.ts (fake fleet) · index.ts (switch)
+  components/ Status.tsx (chips) · RolloutProgress.tsx (segmented breakdown)
+  pages/      Fleet · DeviceDetail · Targets · Rollouts · RolloutDetail
+  theme.css   design tokens, light + dark
+```
+
+## Design notes
+
+Colours follow a validated palette. Two rules are load-bearing:
+
+- **Status is never colour alone.** Every chip is colour + glyph + word. On a
+  light surface `warning` and `serious` sit below 3:1 contrast by design, and
+  the label is the mitigation — don't strip it to save space.
+- **The rollout bar is segmented, never one percentage.** In-flight stages use a
+  sequential blue ramp (light = earlier); terminal outcomes use reserved status
+  colours. Counts appear as numbers beside the legend, and the failure rate is
+  stated in words underneath.
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -118,37 +173,13 @@ Enforcement belongs on the server. The UI hides buttons; that is a convenience, 
 
 ---
 
-## Development
+## Not built yet
 
-```bash
-npm run dev
-```
-
-Proxy the API in `vite.config.ts`:
-
-```ts
-server: {
-  proxy: {
-    '/api': { target: 'http://localhost:8000', changeOrigin: true },
-    '/ws':  { target: 'ws://localhost:8000', ws: true },
-  },
-}
-```
-
-Run `ota-server`'s compose stack alongside. Seed it with fake devices — a fleet view built and
-tested against three rows will be unusable at three thousand. Test with pagination, sorting and
-filtering against a realistic device count from day one.
-
----
-
-## Layout
-
-```
-src/
-  api/          generated client + react-query hooks
-  pages/        Fleet, DeviceDetail, Targets, Rollouts, RolloutDetail, Settings
-  components/   tables, status chips, progress breakdown
-  auth/         OIDC integration
-public/
-docs/
-```
+- **Auth.** No login, no OIDC, no roles. `DECISIONS.md` D11.
+- **Settings screen.** Groups, channels, maintenance windows, tokens.
+- **Create-rollout form.** The API method exists (`createRollout`); no UI yet.
+  When built, it must state the blast radius — "Roll out v1.2.3 to production
+  (4,182 devices)" — before it will submit.
+- **WebSocket live updates.** Polling is a placeholder, see the table above.
+- **Server-side pagination.** The fleet table caps at 200 rows client-side; the
+  real endpoint needs to paginate.
